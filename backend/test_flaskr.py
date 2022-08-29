@@ -2,6 +2,7 @@ import os
 import unittest
 import json
 from flask_sqlalchemy import SQLAlchemy
+from settings import DB_NAME_TEST, DB_USER, DB_PASSWORD
 
 from flaskr import create_app
 from models import setup_db, Question, Category
@@ -16,18 +17,17 @@ class TriviaTestCase(unittest.TestCase):
         self.client = self.app.test_client
         self.database_name = "trivia_test"
         # self.database_path = "postgres://{}/{}".format('localhost:5432', self.database_name)
-        database_username = ""
-        database_password = ""
-        self.database_path = 'postgresql://{}:{}@{}/{}'.format(database_username, database_password, 'localhost:5432', self.database_name)
+        self.database_path = 'postgresql://{}:{}@{}/{}'.format(DB_USER, DB_PASSWORD, 'localhost:5432',
+                                                               DB_NAME_TEST)
         setup_db(self.app, self.database_path)
-        self.new_question = {"question":"how are you?", "answer":"I am fine", "difficulty":1, "category":1}
+        self.new_question = {"question": "how are you?", "answer": "I am fine", "difficulty": 1, "category": 1}
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
             self.db.init_app(self.app)
             # create all tables
             self.db.create_all()
-    
+
     def tearDown(self):
         """Executed after reach test"""
         pass
@@ -37,7 +37,7 @@ class TriviaTestCase(unittest.TestCase):
     Write at least one test for each test for successful operation and for expected errors.
     """
 
-    #TESTING ENDPOINTS(AS ORDERED IN __INIT__.PY IN FLASKR FOLDER)
+    # TESTING ENDPOINTS(AS ORDERED IN __INIT__.PY IN FLASKR FOLDER)
     def test_get_all_categories(self):
         res = self.client().get('/categories')
         data = json.loads(res.data)
@@ -58,7 +58,7 @@ class TriviaTestCase(unittest.TestCase):
     def test_delete_specific_question(self):
         res = self.client().delete('/questions/4')
         data = json.loads(res.data)
-        specific_question = Question.query.filter(Question.id==4).one_or_none()
+        specific_question = Question.query.filter(Question.id == 4).one_or_none()
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
         self.assertEqual(specific_question, None)
@@ -70,7 +70,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
 
     def search_question(self):
-        res = self.client().post('/questions/search', json={"search_term":"how"})
+        res = self.client().post('/questions/search', json={"search_term": "how"})
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
@@ -94,7 +94,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertTrue(data['random_question'])
 
-    #TESTING ERROR BEHAVIOURS
+    # TESTING ERROR BEHAVIOURS
     def test_404_question_page_not_found(self):
         res = self.client().get('/questions?page=10000')
         data = json.loads(res.data)
@@ -109,19 +109,26 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], "Resource not found")
 
+    def test_422_create_question(self):
+        response = self.client().post('/questions', json={})
+        data = json.loads(response.data)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], "Unprocessable request")
+
+    def test_422_search_question(self):
+        response = self.client().post('/questions/search', json={})
+        data = json.loads(response.data)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], "Unprocessable request")
+
     def test_422_questions_by_category(self):
         res = self.client().get('/categories/10000/questions')
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 422)
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], "Unprocessable request")
-
-
-
-
-
-
-
 
 
 # Make the tests conveniently executable
