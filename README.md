@@ -160,7 +160,7 @@ Example:
 }
 
 ## ERROR HANDLING
-This Trivia API handles errors *gracefully and displays them in JSON format.
+This Trivia API handles errors gracefully and displays them in JSON format.
 
 ### ERRORS
 >The errors that are returned when something goes wrong with the API are:
